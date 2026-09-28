@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EduGenie - Learning Assistant</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">EduGenie</div>
+
+            <p class="tagline">
+                Google Gemini Powered Learning Assistant
+            </p>
+        </header>
+
+
+        <!-- Main Card -->
+        <main class="card">
+
+            <h1>Learn Smarter with EduGenie</h1>
+
+            <p class="description">
+                Ask questions, understand difficult concepts, create quizzes,
+                summarize educational content, and get personalized learning paths.
+            </p>
+
+
+            <!-- Task Selection -->
+            <label for="task">
+                Select Learning Task
+            </label>
+
+            <select id="task">
+
+                <option value="qa">
+                    Question & Answer
+                </option>
+
+                <option value="explain">
+                    Explain a Concept
+                </option>
+
+                <option value="quiz">
+                    Generate Quiz
+                </option>
+
+                <option value="summarize">
+                    Summarize Text
+                </option>
+
+                <option value="learn">
+                    Recommend Learning Path
+                </option>
+
+            </select>
+
+
+            <!-- User Input -->
+            <label for="userInput">
+                Enter your question or topic
+            </label>
+
+            <textarea
+                id="userInput"
+                placeholder="Example: Explain the Pythagoras theorem in simple words..."
+            ></textarea>
+
+
+            <!-- Button -->
+            <button id="submitButton">
+                Generate
+            </button>
+
+
+            <!-- Loading -->
+            <div id="loading" class="loading hidden">
+                EduGenie is thinking...
+            </div>
+
+
+            <!-- Result -->
+            <section id="resultSection" class="result-section">
+
+                <h2>Result</h2>
+
+                <div id="result">
+                    Your result will appear here.
+                </div>
+
+            </section>
+
+        </main>
+
+
+        <!-- Footer -->
+        <footer class="footer">
+
+            <p>
+                EduGenie © 2026 | Powered by Google Gemini
+            </p>
+
+        </footer>
+
+    </div>
+
+
+    <script>
+
+        const task = document.getElementById("task");
+        const userInput = document.getElementById("userInput");
+        const submitButton = document.getElementById("submitButton");
+        const result = document.getElementById("result");
+        const loading = document.getElementById("loading");
+
+
+        submitButton.addEventListener("click", async function () {
+
+            const selectedTask = task.value;
+            const inputText = userInput.value.trim();
+
+
+            if (!inputText) {
+
+                result.textContent =
+                    "Please enter a question or topic first.";
+
+                return;
+            }
+
+
+            loading.classList.remove("hidden");
+
+            result.textContent = "";
+
+            submitButton.disabled = true;
+
+
+            let endpoint = "";
+            let requestData = {};
+
+
+            if (selectedTask === "qa") {
+
+                endpoint = "/qa";
+
+                requestData = {
+                    question: inputText
+                };
+
+            }
+
+
+            else if (selectedTask === "explain") {
+
+                endpoint = "/explain";
+
+                requestData = {
+                    text: inputText
+                };
+
+            }
+
+
+            else if (selectedTask === "quiz") {
+
+                endpoint = "/quiz";
+
+                requestData = {
+                    text: inputText
+                };
+
+            }
+
+
+            else if (selectedTask === "summarize") {
+
+                endpoint = "/summarize";
+
+                requestData = {
+                    text: inputText
+                };
+
+            }
+
+
+            else if (selectedTask === "learn") {
+
+                endpoint = "/learn/recommendations";
+
+                requestData = {
+                    text: inputText
+                };
+
+            }
+
+
+            try {
+
+                const response = await fetch(endpoint, {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify(requestData)
+
+                });
+
+
+                const data = await response.json();
+
+
+                if (!data.success) {
+
+                    result.textContent =
+                        data.message || "Something went wrong.";
+
+                    return;
+                }
+
+
+                // Quiz result
+                if (selectedTask === "quiz") {
+
+                    displayQuiz(data.result);
+
+                }
+
+                // Other results
+                else {
+
+                    displayText(data.result);
+
+                }
+
+
+            }
+
+            catch (error) {
+
+                result.textContent =
+                    "Unable to connect to the server. Please try again.";
+
+            }
+
+
+            finally {
+
+                loading.classList.add("hidden");
+
+                submitButton.disabled = false;
+
+            }
+
+        });
+
+
+        function displayText(text) {
+
+            result.textContent = text;
+
+        }
+
+
+        function displayQuiz(quiz) {
+
+            result.innerHTML = "";
+
+
+            quiz.forEach(function (question, index) {
+
+                const questionBox =
+                    document.createElement("div");
+
+                questionBox.className = "quiz-question";
+
+
+                const questionTitle =
+                    document.createElement("h3");
+
+                questionTitle.textContent =
+                    (index + 1) + ". " + question.question;
+
+
+                questionBox.appendChild(questionTitle);
+
+
+                question.options.forEach(function (option) {
+
+                    const optionButton =
+                        document.createElement("button");
+
+                    optionButton.className =
+                        "option-button";
+
+                    optionButton.textContent =
+                        option;
+
+
+                    optionButton.addEventListener(
+                        "click",
+                        function () {
+
+                            const buttons =
+                                questionBox.querySelectorAll(
+                                    ".option-button"
+                                );
+
+
+                            buttons.forEach(function (button) {
+
+                                button.disabled = true;
+
+                            });
+
+
+                            if (option === question.correct_answer) {
+
+                                optionButton.classList.add("correct");
+
+                            }
+
+                            else {
+
+                                optionButton.classList.add("wrong");
+
+                                buttons.forEach(function (button) {
+
+                                    if (
+                                        button.textContent ===
+                                        question.correct_answer
+                                    ) {
+
+                                        button.classList.add("correct");
+
+                                    }
+
+                                });
+
+                            }
+
+
+                            const explanation =
+                                document.createElement("p");
+
+                            explanation.className =
+                                "explanation";
+
+                            explanation.textContent =
+                                "Explanation: " +
+                                question.explanation;
+
+
+                            questionBox.appendChild(
+                                explanation
+                            );
+
+                        }
+                    );
+
+
+                    questionBox.appendChild(
+                        optionButton
+                    );
+
+                });
+
+
+                result.appendChild(
+                    questionBox
+                );
+
+            });
+
+        }
+
+    </script>
+
+</body>
+
+</html>
